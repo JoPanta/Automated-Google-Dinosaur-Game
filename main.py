@@ -4,6 +4,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from PIL import Image
 from io import BytesIO
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
 
 # to keep browser open
 chrome_options = webdriver.ChromeOptions()
@@ -14,33 +17,55 @@ driver = webdriver.Chrome(options=chrome_options)
 # full page
 driver.maximize_window()
 driver.get('https://chromedino.com/')
-# wait for elements to appear, if necessary
-driver.implicitly_wait(4)
 
-cookies = driver.find_element(By.XPATH, value='//*[@id="t"]/div[3]/div[2]/div[1]/div[2]/div[2]/button[1]')
+
+# wait for elements to appear, if necessary
+cookies = (WebDriverWait(driver, 10).until
+           (EC.element_to_be_clickable((By.XPATH, '//*[@id="t"]/div[3]/div[2]/div[1]/div[2]/div[2]/button[1]'))))
 cookies.click()
-#
-screen = driver.find_element(By.XPATH, value='//*[@id="main-frame-error"]')
-# location = screen.location
-# size = screen.size
-left = 810
-top = 330
-right = left + 10
-bottom = top + 10
+
+canvas = driver.find_element(By.XPATH, value='//*[@id="main-frame-error"]/div[2]/canvas')
+print(canvas.location, canvas.size)
 
 # pressing space
-actions = ActionChains(driver)
-actions.send_keys(Keys.SPACE).perform()
+
+driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.SPACE)
+
+
+def is_color_present(image, target_color):
+    # open image
+
+    im = Image.open(BytesIO(image))
+
+    # crop image
+    cropped_img = im.crop((840, 180, 870, 220))
+
+    # iterate through each pixel
+
+    for x in range(cropped_img.width):
+        for y in range(cropped_img.height):
+            # Get the RGB values of the current pixel
+            pixel_color = cropped_img.getpixel((x, y))
+
+            if pixel_color == target_color:
+                return True
+
+    # If the target color is not found in the cropped image
+    return False
+
+
+target_color = (83, 83, 83, 255)
+
+image = driver.get_screenshot_as_png()
+
 
 
 while True:
     # saves screenshot of entire page
-    png = driver.get_screenshot_as_png()
-    # uses PIL library to open image in memory
-    im = Image.open(BytesIO(png))
-    # defines crop points
-    im = im.crop((left, top, right, bottom))
-    im.save('screenshot1.png') # saves new cropped image
+    image = driver.get_screenshot_as_png()
 
-    if not im.getbbox():
-        im.save('screenshot2.png') # saves new cropped image
+    result = is_color_present(image, target_color)
+    if result:
+        driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.SPACE)
+    else:
+        pass
