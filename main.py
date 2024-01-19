@@ -27,8 +27,8 @@ def take_print():
     bbox = (box[0], box[1], box[2], box[3])
     image = ImageGrab.grab(bbox)
     gray = ImageOps.grayscale(image)
-    image.save("box.png")
-    color = gray.getcolors()
+    # image.save("box.png")
+    # color = gray.getcolors()
     total = sum(map(sum, gray.getcolors()))
     return total
 
